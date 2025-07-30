@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Meet Link Reader</title>
+    <style>
+      /*
+       * This page provides a simple, accessible interface to join a Google
+       * Meet session. It features a large Join button, optional countdown
+       * timer, and automatic forwarding after a configurable delay. The
+       * colours and layout are chosen to be clear and easy to read for
+       * elderly users.
+       */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f6f7f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+        padding: 20px;
+        box-sizing: border-box;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+        color: #202124;
+      }
+
+      #countdown {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: #555;
+        min-height: 1.5em;
+      }
+
+      #autoForwardMsg {
+        font-size: 0.875rem;
+        color: #888;
+        margin-bottom: 1rem;
+      }
+
+      #joinButton {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.5rem;
+        background-color: #34a853; /* Google Meet green */
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #joinButton:disabled {
+        background-color: #a5d6a7;
+        cursor: not-allowed;
+      }
+
+      #joinButton:hover:not(:disabled) {
+        background-color: #1e8e3e;
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 1.5rem;
+        }
+        #joinButton {
+          font-size: 1.25rem;
+          padding: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Join Your Google Meet</h1>
+      <div id="countdown"></div>
+      <div id="autoForwardMsg"></div>
+      <button id="joinButton" disabled>Join Meeting</button>
+    </div>
+    <script>
+      // Extract query parameters: link (required), start (optional ISO date/timestamp)
+      // and autoforward (optional number of seconds or "true").
+      const params = new URLSearchParams(window.location.search);
+      const meetLink = params.get('link');
+      const startParam = params.get('start');
+      const forwardParam = params.get('autoforward');
+
+      const joinButton = document.getElementById('joinButton');
+      const countdownEl = document.getElementById('countdown');
+      const autoForwardEl = document.getElementById('autoForwardMsg');
+
+      // Only enable the join button if a link was provided
+      if (meetLink) {
+        joinButton.disabled = false;
+        joinButton.addEventListener('click', () => {
+          window.location.href = meetLink;
+        });
+      } else {
+        countdownEl.textContent = 'No Google Meet link provided.';
+      }
+
+      // Start a countdown timer if a valid start time is present
+      function startCountdown(targetTime) {
+        function render() {
+          const now = Date.now();
+          const diff = targetTime - now;
+          if (diff <= 0) {
+            countdownEl.textContent = 'Meeting starting…';
+            clearInterval(timer);
+            // If a link exists, redirect immediately when countdown completes
+            if (meetLink) window.location.href = meetLink;
+            return;
+          }
+          const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+          const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+          const seconds = Math.floor((diff % (60 * 1000)) / 1000);
+          const parts = [];
+          if (hours > 0) parts.push(hours + 'h');
+          parts.push(String(minutes).padStart(2, '0') + 'm');
+          parts.push(String(seconds).padStart(2, '0') + 's');
+          countdownEl.textContent = 'Starts in ' + parts.join(' ');
+        }
+        render();
+        const timer = setInterval(render, 1000);
+      }
+
+      if (startParam) {
+        let startTime;
+        if (/^\d+$/.test(startParam)) {
+          startTime = new Date(parseInt(startParam, 10));
+        } else {
+          startTime = new Date(startParam);
+        }
+        if (!isNaN(startTime)) {
+          startCountdown(startTime.getTime());
+        } else {
+          countdownEl.textContent = 'Invalid start time format.';
+        }
+      }
+
+      // Set up auto forwarding: after N seconds, redirect to the Meet link.
+      if (meetLink && forwardParam !== null) {
+        let delay;
+        const num = parseInt(forwardParam, 10);
+        delay = isNaN(num) ? 10 : num;
+        if (delay > 0) {
+          let remaining = delay;
+          autoForwardEl.textContent =
+            'You will be redirected automatically in ' + remaining + 's…';
+          const interval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+              clearInterval(interval);
+            }
+            autoForwardEl.textContent =
+              'You will be redirected automatically in ' + remaining + 's…';
+          }, 1000);
+          setTimeout(() => {
+            window.location.href = meetLink;
+          }, delay * 1000);
+        }
+      }
+    </script>
+  </body>
+</html>
