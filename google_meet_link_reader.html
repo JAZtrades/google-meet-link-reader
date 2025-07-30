@@ -97,7 +97,13 @@
       // Extract query parameters: link (required), start (optional ISO date/timestamp)
       // and autoforward (optional number of seconds or "true").
       const params = new URLSearchParams(window.location.search);
-      const meetLink = params.get('link');
+      // Determine the meeting link.
+      // If the URL has a `link` parameter, use that; otherwise fall back to the
+      // persistent meeting link provided by the user (for example, a Meet
+      // created with "Create a meeting for later").  This allows the page to
+      // work without any query parameters when a default meeting link is
+      // configured here.
+      const meetLink = params.get('link') || 'https://meet.google.com/ptp-fezu-tkk';
       const startParam = params.get('start');
       const forwardParam = params.get('autoforward');
 
