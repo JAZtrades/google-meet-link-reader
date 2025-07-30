@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whereby Link Reader</title>
+    <style>
+      /*
+       * This simple page helps elderly clients join a Whereby video call
+       * without fuss. It features a large, easy‑to‑read Join button,
+       * a countdown that automatically redirects them after a short delay,
+       * and a responsive layout suitable for phones, tablets and desktops.
+       */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f6f7;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+        padding: 20px;
+        box-sizing: border-box;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+        color: #202124;
+      }
+
+      #countdown {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: #555;
+        min-height: 1.5em;
+      }
+
+      #autoForwardMsg {
+        font-size: 0.875rem;
+        color: #888;
+        margin-bottom: 1rem;
+      }
+
+      #joinButton {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.5rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #joinButton:disabled {
+        background-color: #a5d6f7;
+        cursor: not-allowed;
+      }
+
+      #joinButton:hover:not(:disabled) {
+        background-color: #0062cc;
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 1.5rem;
+        }
+        #joinButton {
+          font-size: 1.25rem;
+          padding: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Join Your Whereby Meeting</h1>
+      <div id="countdown"></div>
+      <div id="autoForwardMsg"></div>
+      <button id="joinButton" disabled>Join Meeting</button>
+    </div>
+    <script>
+      // Parse query parameters from the URL. Supported parameters:
+      //   link: optional override for the Whereby meeting link
+      //   autoforward: optional number of seconds to wait before redirecting
+      const params = new URLSearchParams(window.location.search);
+
+      // Default Whereby meeting link. Replace this with your permanent room link.
+      const DEFAULT_LINK = 'https://whereby.com/john-zarcaro54130';
+
+      const meetingLink = params.get('link') || DEFAULT_LINK;
+      const forwardParam = params.get('autoforward');
+
+      const joinButton = document.getElementById('joinButton');
+      const countdownEl = document.getElementById('countdown');
+      const autoForwardEl = document.getElementById('autoForwardMsg');
+
+      // Enable the join button and attach click handler
+      if (meetingLink) {
+        joinButton.disabled = false;
+        joinButton.addEventListener('click', () => {
+          window.location.href = meetingLink;
+        });
+      } else {
+        countdownEl.textContent = 'No meeting link provided.';
+      }
+
+      // Determine the delay (in seconds) before auto-forwarding. Default is 5 seconds
+      let delay;
+      if (forwardParam !== null) {
+        const n = parseInt(forwardParam, 10);
+        delay = isNaN(n) ? 5 : Math.max(n, 0);
+      } else {
+        delay = 5;
+      }
+
+      // If a link exists and delay is greater than zero, start a countdown and schedule redirect
+      if (meetingLink && delay > 0) {
+        let remaining = delay;
+        autoForwardEl.textContent =
+          'You will be redirected automatically in ' + remaining + 's…';
+        const intervalId = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(intervalId);
+          }
+          autoForwardEl.textContent =
+            'You will be redirected automatically in ' + remaining + 's…';
+        }, 1000);
+        setTimeout(() => {
+          window.location.href = meetingLink;
+        }, delay * 1000);
+      }
+    </script>
+  </body>
+</html>
